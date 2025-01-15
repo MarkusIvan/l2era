@@ -1,6 +1,7 @@
 import { Wallet } from "ethers";
 import { Transaction } from "./Transaction";
 import { Block } from "./Block";
+import { BlobOptions } from "buffer";
 
 export class Blockchain {
     chain: Block[];
@@ -61,6 +62,7 @@ export class Blockchain {
     minePendingTransactions(): void {
         const newBlock = new Block(this.getLastBlock().index + 1, this.pendingTransactions, this.getLastBlock().hash);
         newBlock.mineBlock(this.difficulty);
+        this.validateChain();
         this.chain.push(newBlock);
         console.log(`Block added to the chain with index: ${newBlock.index}`);
         this.pendingTransactions = [];
@@ -75,4 +77,41 @@ export class Blockchain {
             balances: Object.fromEntries(this.balances), // Конвертуємо Map у звичайний об'єкт
         };
     }
+
+    validateChain(): boolean {
+        for (let i = 1; i < this.chain.length; i++) {
+            const currentBlock = this.chain[i];
+            const previousBlock = this.chain[i - 1];
+    
+            // Перевірка хешу блоку
+            if (currentBlock.hash !== currentBlock.calculateHash()) {
+                console.log(`Block ${currentBlock.index} has an invalid hash.`);
+                return false;
+            }
+    
+            // Перевірка зв'язку з попереднім блоком
+            if (currentBlock.previousHash !== previousBlock.hash) {
+                console.log(`Block ${currentBlock.index} has an invalid previous hash.`);
+                return false;
+            }
+    
+            // Перевірка коректності транзакцій
+            for (const tx of currentBlock.transactions) {
+                if (!this.isTransactionValid(tx)) {
+                    console.log(`Block ${currentBlock.index} contains an invalid transaction.`);
+                    return false;
+                }
+            }
+        }
+        console.log("Blockchain is valid.");
+        return true;
+    }
+    
+    // Перевірка транзакції
+    isTransactionValid(transaction: Transaction): boolean {
+        // Перевіряємо, чи відправник має достатньо коштів
+        const senderBalance = this.balances.get(transaction.sender) || 0;
+        return senderBalance >= transaction.amount;
+    }
+    
 }
