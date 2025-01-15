@@ -12,7 +12,7 @@ class Blockchain {
         this.balances = new Map();
         const developerWallet = this.createWallet(); // Створюємо головний гаманець
         this.balances.set(developerWallet.address, 1000000); // Присвоюємо йому баланс
-        console.log(`Головний гаманець: ${developerWallet.address}, Баланс: 1000000`);
+        console.log(`Головний гаманець: ${developerWallet.address}, Баланс: 1000000000`);
     }
     createGenesisBlock() {
         const newBlock = new Block_1.Block(0, [], "0");
