@@ -1,7 +1,6 @@
 import { Wallet } from "ethers";
 import { Transaction } from "./Transaction";
 import { Block } from "./Block";
-import { BlobOptions } from "buffer";
 
 export class Blockchain {
     chain: Block[];
@@ -16,24 +15,29 @@ export class Blockchain {
         this.pendingTransactions = [];
         this.miningThreshold = 5;
         this.balances = new Map<string, number>(); // Баланси всіх гаманців
+        console.log("✅ Ланцюг блоків ініціалізовано.");
     }
 
-    createGenesisBlock(): Block { // Метод з ethers             
+    createGenesisBlock(): Block {
         const newBlock = new Block(0, [], "0");
+        console.log("🟢 Генезис-блок створено.");
         return newBlock;
     }
 
     getLastBlock(): Block {
         const lastBlock = this.chain[this.chain.length - 1];
+        console.log("🔎 Останній блок отримано:", lastBlock.index);
         return lastBlock;
     }
     
     addTransaction(transaction: Transaction): void {
-        if (this.balances.get(transaction.sender)! < transaction.amount) {
-            throw new Error("Недостатньо коштів");
+        console.log(`➕ Додаємо транзакцію від ${transaction.sender} до ${transaction.receiver} на суму ${transaction.amount}`);
+        if ((this.balances.get(transaction.sender) || 0) < transaction.amount) {
+            throw new Error("❌ Недостатньо коштів для виконання транзакції.");
         }
-        this.balances.set(transaction.sender, this.balances.get(transaction.sender)! - transaction.amount); // Мотод віднімання коштів з сендера
-        this.balances.set(transaction.receiver, (this.balances.get(transaction.receiver) || 0) + transaction.amount); // Метод додавання до отримувача
+        this.balances.set(transaction.sender, this.balances.get(transaction.sender)! - transaction.amount);
+        this.balances.set(transaction.receiver, (this.balances.get(transaction.receiver) || 0) + transaction.amount);
+        console.log(`✅ Транзакція додана. Новий баланс відправника: ${this.balances.get(transaction.sender)}`);
         
         this.pendingTransactions.push(transaction);
         if (this.pendingTransactions.length >= this.miningThreshold) {
@@ -41,76 +45,53 @@ export class Blockchain {
         }
     }
 
-    createWallet(): { address: string; privateKey: string } { // Метод з ethers 
+    createWallet(): { address: string; privateKey: string } {
         const wallet = Wallet.createRandom();
+        console.log(`🎉 Створено гаманець: ${wallet.address}`);
         return {
             address: wallet.address,
             privateKey: wallet.privateKey
         };
     }
 
-    getBalance(address: string): number { // Метод з ethers 
-        return this.balances.get(address) || 0; // Якщо адресу не знайдено, повертаємо 0
+    getBalance(address: string): number {
+        const balance = this.balances.get(address) || 0;
+        console.log(`💰 Баланс для ${address}: ${balance}`);
+        return balance;
     }    
 
     addBalance(address: string, amount: number): void {
         const currentBalance = this.balances.get(address) || 0;
         this.balances.set(address, currentBalance + amount);
-        console.log(`Added ${amount} to address ${address}. \nNew balance: ${this.balances.get(address)}`);
+        console.log(`✅ Додано ${amount} до балансу адреси ${address}. Новий баланс: ${this.balances.get(address)}`);
     }
 
     minePendingTransactions(): void {
+        console.log("⛏️ Початок майнінгу...");
         const newBlock = new Block(this.getLastBlock().index + 1, this.pendingTransactions, this.getLastBlock().hash);
         newBlock.mineBlock(this.difficulty);
-        this.validateChain();
         this.chain.push(newBlock);
-        console.log(`Block added to the chain with index: ${newBlock.index}`);
+        console.log(`🟢 Блок з індексом ${newBlock.index} додано до ланцюга.`);
         this.pendingTransactions = [];
     }
 
-    toJSON() { // Методя для нормального виведення
-        return {
-            chain: this.chain,
-            difficulty: this.difficulty,
-            pendingTransactions: this.pendingTransactions,
-            miningThreshold: this.miningThreshold,
-            balances: Object.fromEntries(this.balances), // Конвертуємо Map у звичайний об'єкт
-        };
-    }
-
     validateChain(): boolean {
+        console.log("🔍 Початок перевірки ланцюга...");
         for (let i = 1; i < this.chain.length; i++) {
             const currentBlock = this.chain[i];
             const previousBlock = this.chain[i - 1];
     
-            // Перевірка хешу блоку
             if (currentBlock.hash !== currentBlock.calculateHash()) {
-                console.log(`Block ${currentBlock.index} has an invalid hash.`);
+                console.log(`❌ Помилка: Хеш блоку ${currentBlock.index} є некоректним.`);
                 return false;
             }
     
-            // Перевірка зв'язку з попереднім блоком
             if (currentBlock.previousHash !== previousBlock.hash) {
-                console.log(`Block ${currentBlock.index} has an invalid previous hash.`);
+                console.log(`❌ Помилка: Попередній хеш для блоку ${currentBlock.index} не відповідає.`);
                 return false;
-            }
-    
-            // Перевірка коректності транзакцій
-            for (const tx of currentBlock.transactions) {
-                if (!this.isTransactionValid(tx)) {
-                    console.log(`Block ${currentBlock.index} contains an invalid transaction.`);
-                    return false;
-                }
             }
         }
-        console.log("Blockchain is valid.");
+        console.log("✅ Ланцюг блоків валідний.");
         return true;
-    }
-    
-    // Перевірка транзакції
-    isTransactionValid(transaction: Transaction): boolean {
-        // Перевіряємо, чи відправник має достатньо коштів
-        const senderBalance = this.balances.get(transaction.sender) || 0;
-        return senderBalance >= transaction.amount;
     }
 }
