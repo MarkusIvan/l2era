@@ -1,12 +1,9 @@
 // import "./server/server";
+import { Wallet, WordlistOwlA } from "ethers";
 import { Blockchain } from "./blockchain/Blockchain";
 import { Transaction } from "./blockchain/Transaction";
+import { BlockchainMini } from "./blockchain/BlockchainMini";
 
-const l2era = new Blockchain();
-
-// Створюємо гаманці
-const wallet1 = l2era.createWallet();
-const wallet2 = l2era.createWallet();
-
-console.log(`Wallet 1: ${wallet1.address}`);
-console.log(`Wallet 2: ${wallet2.address}`);
+const blockchainMini = new BlockchainMini();
+const wallet1 = blockchainMini.createWallet();
+console.log(wallet1);
