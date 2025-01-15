@@ -113,5 +113,4 @@ export class Blockchain {
         const senderBalance = this.balances.get(transaction.sender) || 0;
         return senderBalance >= transaction.amount;
     }
-    
 }

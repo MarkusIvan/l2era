@@ -21,4 +21,4 @@ blockchain.addTransaction(new Transaction(wallet.address, wallet1.address, 55));
 blockchain.addTransaction(new Transaction(wallet.address, wallet1.address, 523));
 blockchain.addTransaction(new Transaction(wallet.address, wallet1.address, 52));
 
-console.log(JSON.stringify(blockchain, null, 4));
+console.log(JSON.stringify(blockchain, null, 5));
